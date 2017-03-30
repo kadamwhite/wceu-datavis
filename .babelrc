@@ -1,0 +1,24 @@
+{
+  "presets": [
+    // webpack understands the native import syntax, and uses it for tree shaking
+    ["es2015", {"modules": false}],
+
+    // Transpile React components to JavaScript
+    "react"
+  ],
+
+  "plugins": [
+    // Enables React code to work with HMR.
+    "react-hot-loader/babel",
+    // Enables usage of object rest spread in arguments
+    "transform-object-rest-spread"
+  ],
+
+  "env": {
+    "test": {
+      // unlike webpack, jest does not understand the native import syntax:
+      // transpile es2015 modules to commonjs syntax within the test runner
+      "plugins": ["transform-es2015-modules-commonjs"]
+    }
+  }
+}
