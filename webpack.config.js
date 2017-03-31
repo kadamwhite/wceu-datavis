@@ -3,7 +3,6 @@ const webpack = require('webpack');
 const findCacheDir = require('find-cache-dir');
 const objectHash = require('node-object-hash');
 
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 
 const hardSourceCacheDir = findCacheDir({
@@ -11,18 +10,19 @@ const hardSourceCacheDir = findCacheDir({
   name: 'hard-source/[confighash]',
 });
 
+const pluginPath = __dirname.replace( /.*\/plugins/i, '/plugins' );
+
 module.exports = {
   devtool: 'inline-source-map',
 
   context: resolve(__dirname, 'src'),
 
   entry: [
+    // Allow WP to control the publicPath
+    './dev-path-transformation',
+
     // activate HMR for React
     'react-hot-loader/patch',
-
-    // bundle the client for webpack-dev-server
-    // and connect to the provided endpoint
-    'webpack-dev-server/client?http://localhost:8080',
 
     // bundle the client for hot reloading
     // only- means to only hot reload for successful updates
@@ -37,18 +37,25 @@ module.exports = {
 
     path: resolve(__dirname, 'dist'),
 
-    // necessary for HMR to know where to load the hot update chunks
-    publicPath: '/',
+    // necessary for HMR to know to load the hot updates from the dev server:
+    // in the WP-served dev bundle, WordPress will re-write this value to match
+    // the local plugin URI (see PHP entrypoint & src/dev-path-transformation)
+    publicPath: '//localhost:8080/',
   },
 
   devServer: {
     // enable HMR on the server
     hot: true,
 
+    // inject the 'webpack-dev-server/client' script into the bundle: we only
+    // need this when running from the dev server, so we omit it from our main
+    // entry files array above
+    inline: true,
+
     // match the output path
     contentBase: resolve(__dirname, 'dist'),
 
-    // match the output `publicPath`
+    // when running from the dev server, all files are served from server root
     publicPath: '/',
   },
 
@@ -110,6 +117,12 @@ module.exports = {
     ],
   },
 
+  externals: {
+    // Whitelist the global values that WordPress will inject via wp_localize_script
+    WP_TAG_ADJACENCY_PLUGIN_PATH: true,
+    WPAPI_SETTINGS: true,
+  },
+
   resolve: {
     extensions: ['.js', '.jsx'],
   },
@@ -120,11 +133,6 @@ module.exports = {
 
     // prints more readable module names in the browser console on HMR updates
     new webpack.NamedModulesPlugin(),
-
-    // Inject generated scripts into the src/index.html template
-    new HtmlWebpackPlugin({
-      template: './index.html',
-    }),
 
     // Use hard source caching for faster rebuilds
     new HardSourceWebpackPlugin({

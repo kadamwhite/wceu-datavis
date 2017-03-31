@@ -29,5 +29,5 @@ node_modules
 # Build caches
 .cache
 
-# Build files
+# Build files (should be force-committed on release branches)
 dist/

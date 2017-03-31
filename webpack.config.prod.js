@@ -2,8 +2,10 @@ const { resolve } = require('path');
 const webpack = require('webpack');
 const findCacheDir = require('find-cache-dir');
 
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const WebpackFileList = require('webpack-file-list-plugin');
+
+const outputPath = resolve(__dirname, 'dist');
 
 module.exports = {
   devtool: 'source-map',
@@ -18,7 +20,7 @@ module.exports = {
     // the output bundle
     filename: '[name]-[hash].min.js',
 
-    path: resolve(__dirname, 'dist'),
+    path: outputPath,
   },
 
   module: {
@@ -72,11 +74,6 @@ module.exports = {
   },
 
   plugins: [
-    // Inject generated scripts into the frontend/index.html template
-    new HtmlWebpackPlugin({
-      template: './index.html',
-    }),
-
     // Set NODE_ENV to production so that Uglify can strip out dev-only code
     new webpack.DefinePlugin({
       'process.env': {
@@ -93,6 +90,13 @@ module.exports = {
       compress: {
         warnings: false,
       },
+    }),
+
+    // Generate a manifest of webpack-authored filenames that the plugin can use
+    // to enqueue production-ready bundles
+    new WebpackFileList({
+      filename: 'webpack-manifest.json',
+      path: outputPath,
     }),
   ],
 

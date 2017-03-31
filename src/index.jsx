@@ -25,7 +25,7 @@ const render = (Component) => {
         <Component />
       </Provider>
     </AppContainer>,
-    document.getElementById('root')
+    document.getElementById('tag_adjacency_application_root')
   );
 };
 
