@@ -17,6 +17,7 @@
     "build-storybook": "build-storybook",
     "build:prod": "npm run clean && webpack --config webpack.config.prod.js",
     "clean": "rimraf dist/ && mkdirp dist",
+    "clear-cache": "rimraf node_modules/.cache",
     "lint": "eslint --ext js,jsx ./*.js src jest .storybook",
     "start": "webpack-dev-server",
     "storybook": "start-storybook -p 6006",
@@ -36,7 +37,7 @@
       "<rootDir>/(dist|node_modules)/"
     ],
     "testEnvironment": "node",
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx)$"
+    "testRegex": "(/__tests__/[^\\/]*|\\.(test|spec))\\.(js|jsx)$"
   },
   "dependencies": {
     "babel-polyfill": "^6.23.0",
