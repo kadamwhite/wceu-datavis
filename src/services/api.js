@@ -60,12 +60,18 @@ function getAllInParallel(resourceFactory, perRequest, perBatch, batchCb = noop)
 
       // Iterate through the batches, requesting all pages in each batch in
       // parallel and calling batchCb on each individual batch
-      // eslint-disable-next-line arrow-body-style
       return batches.reduce((lastBatch, batch) => lastBatch.then((combined) => {
-        return Promise.all(batch.map(page => resourceFactory().page(page).get()))
+        function dispatchRequest(page) {
+          return resourceFactory().page(page)
+            .get()
+            .then((posts) => {
+              batchCb(posts);
+              return posts;
+            });
+        }
+        return Promise.all(batch.map(dispatchRequest))
           .then((results) => {
             const batchPosts = flatten(results);
-            batchCb(batchPosts);
             return combined.concat(batchPosts);
           });
       }), Promise.resolve([]));

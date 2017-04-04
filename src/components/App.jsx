@@ -6,9 +6,9 @@ const App = () => (
   <div>
     <h2>Taxonomy Term Coincidence</h2>
     <AdjacencyGraphContainer
-      width={600}
-      height={600}
-      types={['category']}
+      width={700}
+      height={700}
+      types={['post_tag', 'category']}
     />
   </div>
 );

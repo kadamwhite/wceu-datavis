@@ -25,9 +25,16 @@ class AdjacencyGraph extends Component {
     const { matrix, nodes, types, width } = this.props;
 
     const nodeIds = Object.keys(nodes)
-      .filter(id => types.includes(nodes[id].type))
-      .sort(ascending);
-    this.nodes = nodeIds.map(id => nodes[id]);
+      .filter((id) => {
+        // Omit tags with only one post, so that it's not an unwieldy number
+        if (nodes[id].type === 'post_tag' && nodes[id].count <= 1) {
+          return false;
+        }
+        return types.includes(nodes[id].type);
+      });
+    this.nodes = nodeIds
+      .map(id => nodes[id])
+      .sort((node1, node2) => ascending(node1.title, node2.title));
 
     // Set the domain for the x/y position scale & ensure its range is up-to-date
     this.x.rangeRound([0, width]).domain(nodeIds);
@@ -42,7 +49,7 @@ class AdjacencyGraph extends Component {
 
   render() {
     console.log('render');
-    const margin = { top: 150, right: 0, bottom: 10, left: 150 };
+    const margin = { top: 150, right: 0, bottom: 10, left: 200 };
     const { width, height, matrix } = this.props;
 
     // Local references to instance property values
