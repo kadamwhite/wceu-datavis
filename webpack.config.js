@@ -10,8 +10,6 @@ const hardSourceCacheDir = findCacheDir({
   name: 'hard-source/[confighash]',
 });
 
-const pluginPath = __dirname.replace( /.*\/plugins/i, '/plugins' );
-
 module.exports = {
   devtool: 'inline-source-map',
 
@@ -96,7 +94,7 @@ module.exports = {
             loader: 'css-loader',
             options: {
               modules: true,
-              localIdentName: '[path][name]--[local]--[hash:base64:5]',
+              localIdentName: '[path][name]--[hash:base64:5]',
             },
           },
           'postcss-loader', // See postcss.config.js for options
