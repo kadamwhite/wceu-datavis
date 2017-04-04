@@ -11,7 +11,12 @@
  * If WP_DEBUG is false, webpack-manifest.json (generated on prod build) is
  * digested to get the list of hashed JS and CSS filenames to enqueue.
  */
-function tag_adjacency_register_scripts() {
+function tag_adjacency_register_scripts($hook) {
+    // Our JS is only needed on our custom admin page
+    if (strpos($hook, 'tag_adjacency_admin_screen') === false) {
+        return;
+    }
+
     $plugin_dir = plugin_dir_url( __FILE__ );
     $dist_path = $plugin_dir . 'dist/';
     $package_json = file_get_contents( $plugin_dir . '/package.json' );
@@ -98,7 +103,7 @@ function tag_adjacency_register_admin_screen() {
         __( 'Tag Adjacency', 'tag_adjacency' ), // Menu Title
         'edit_posts',                           // Require this Capability
         'tag_adjacency_admin_screen',           // Menu slug
-        'tag_adjacency_render_admin_screen',              // The function to run
+        'tag_adjacency_render_admin_screen',    // The function to run
         'dashicons-forms',                      // icon_url
         9                                       // position
     );
