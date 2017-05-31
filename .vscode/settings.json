@@ -1,0 +1,7 @@
+{
+  // Configure glob patterns for excluding files and folders.
+  "files.exclude": {
+    "dist": true,
+    "src/data.json": true
+  }
+}
