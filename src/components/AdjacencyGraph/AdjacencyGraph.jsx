@@ -1,4 +1,5 @@
-import React, { PropTypes, Component } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { scaleBand, scaleSequential, max } from 'd3';
 import { interpolateYlGn } from 'd3-scale-chromatic';
 
@@ -26,12 +27,23 @@ class AdjacencyGraph extends Component {
 
     const nodeIds = Object.keys(nodes)
       .filter((id) => {
-        // Omit tags with only one post, so that it's not an unwieldy number
-        if (nodes[id].type === 'post_tag' && nodes[id].count <= 1) {
+        if (! types.includes(nodes[id].type)) {
           return false;
         }
-        return types.includes(nodes[id].type);
+        if (nodes[id].type === 'post_tag') {
+          // Omit tags with only one post, so that it's not an unwieldy number
+          if (nodes[id].count <= 1) {
+            return false;
+          }
+          // Omit "featured-" tags, which are an internal artifact of the site
+          // on which this is being prototyped
+          if (nodes[id].title && nodes[id].title.match(/^featured-/)) {
+            return false;
+          }
+        }
+        return true;
       });
+
     this.nodes = nodeIds
       .map(id => nodes[id])
       .sort((node1, node2) => ascending(node1.title, node2.title));
@@ -130,7 +142,7 @@ AdjacencyGraph.propTypes = {
   matrix: PropTypes.objectOf(PropTypes.objectOf(PropTypes.number)).isRequired,
   nodes: PropTypes.objectOf(PropTypes.shape({
     id: PropTypes.string.isRequired,
-    link: PropTypes.string.isRequired,
+    // link: PropTypes.string.isRequired,
     title: PropTypes.string,
     type: PropTypes.string.isRequired,
   })).isRequired,

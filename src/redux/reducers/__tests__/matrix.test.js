@@ -1,5 +1,5 @@
 import matrix from '../matrix';
-import { RECEIVE_POSTS } from '../../actions';
+import * as actions from '../../actions';
 
 describe('matrix reducer', () => {
 
@@ -20,6 +20,93 @@ describe('matrix reducer', () => {
     expect(matrix(state, {})).toBe(state);
   });
 
+  const { RECEIVE_TAGS } = actions;
+  describe(`on ${RECEIVE_TAGS}`, () => {
+    const initialState = matrix(undefined, {});
+
+    it('sets matrix values to represent resource relationships', () => {
+      const nextState = matrix(initialState, {
+        type: RECEIVE_TAGS,
+        payload: [
+          { id: 11, posts: [1] },
+          { id: 12, posts: [1, 2] },
+        ],
+      });
+      expect(nextState).toEqual({
+        1: { t11: 1, t12: 1 },
+        2: { t12: 1 },
+        t11: { t12: 1 },
+      });
+    });
+
+    it('updates values for existing posts', () => {
+      const nextState = matrix({
+        1: { t11: 1, t12: 1 },
+        2: { t12: 1 },
+        t11: { t12: 1 },
+      }, {
+        type: RECEIVE_TAGS,
+        payload: [
+          { id: 13, posts: [1, 3] },
+          { id: 14, posts: [3] },
+        ],
+      });
+      expect(nextState).toEqual({
+        1: { t11: 1, t12: 1, t13: 1 },
+        2: { t12: 1 },
+        3: { t13: 1, t14: 1 },
+        t11: { t12: 1, t13: 1 },
+        t12: { t13: 1 },
+        t13: { t14: 1 },
+      });
+    });
+
+  });
+
+  const { RECEIVE_CATEGORIES } = actions;
+  describe(`on ${RECEIVE_CATEGORIES}`, () => {
+    const initialState = matrix(undefined, {});
+
+    it('sets matrix values to represent resource relationships', () => {
+      const nextState = matrix(initialState, {
+        type: RECEIVE_CATEGORIES,
+        payload: [
+          { id: 11, posts: [1] },
+          { id: 12, posts: [1, 2] },
+        ],
+      });
+      expect(nextState).toEqual({
+        1: { t11: 1, t12: 1 },
+        2: { t12: 1 },
+        t11: { t12: 1 },
+      });
+    });
+
+    it('updates values for existing posts', () => {
+      const nextState = matrix({
+        1: { t11: 1, t12: 1 },
+        2: { t12: 1 },
+        t11: { t12: 1 },
+      }, {
+        type: RECEIVE_CATEGORIES,
+        payload: [
+          { id: 13, posts: [1, 3] },
+          { id: 14, posts: [3] },
+        ],
+      });
+      expect(nextState).toEqual({
+        1: { t11: 1, t12: 1, t13: 1 },
+        2: { t12: 1 },
+        3: { t13: 1, t14: 1 },
+        t11: { t12: 1, t13: 1 },
+        t12: { t13: 1 },
+        t13: { t14: 1 },
+      });
+    });
+
+  });
+
+  const { RECEIVE_POSTS } = actions;
   describe(`on ${RECEIVE_POSTS}`, () => {
     const initialState = matrix(undefined, {});
 

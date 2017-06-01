@@ -1,4 +1,4 @@
-import { RECEIVE_POSTS } from '../actions';
+import { RECEIVE_POSTS, RECEIVE_CATEGORIES, RECEIVE_TAGS } from '../actions';
 import { postId, termId } from '../../services/api';
 import ascending from '../../utils/ascending-sort';
 
@@ -31,6 +31,20 @@ function set(state, id1, id2) {
 
 export default function(state = {}, action) {
   switch (action.type) {
+
+  case RECEIVE_TAGS:
+  case RECEIVE_CATEGORIES:
+    /* eslint-disable no-shadow */// Everything refers to the same object
+    return action.payload.reduce((newState, term) => {
+      const tId = termId(term.id);
+      // Associate the term itself with each post it contains,
+      return term.posts.reduce((carry, pId) => set((
+        // but first, associate the term with all of that posts other terms
+        // (this becomes the first argument for the wrapping call to `set()`)
+        Object.keys(carry[pId] || {}).reduce((carry, tId2) => set(carry, tId, tId2), carry)
+      ), pId, tId), newState);
+    }, state);
+    /* eslint-enable no-shadow */
 
   case RECEIVE_POSTS:
     return action.payload.reduce((newState, post) => {

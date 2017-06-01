@@ -16,17 +16,19 @@ import './global.styl';
 
 import App from './components/App';
 
-import { getAllPosts, getAllCategories, getAllTags } from './services/api';
-import { receivePosts, receiveCategories, receiveTags } from './redux/actions';
+import api from './services/api';
+import { receiveCategories, receiveTags } from './redux/actions';
 
 const store = makeStore();
 
 // Kick off API requests
-getAllPosts(batch => store.dispatch(receivePosts(batch)))
+// getAllPosts(batch => store.dispatch(receivePosts(batch)))
+//   .catch(e => console.error(e));
+api.namespace('wceu/2017').posts().byTag()
+  .then(tags => store.dispatch(receiveTags(tags)))
   .catch(e => console.error(e));
-getAllCategories(batch => store.dispatch(receiveCategories(batch)))
-  .catch(e => console.error(e));
-getAllTags(batch => store.dispatch(receiveTags(batch)))
+api.namespace('wceu/2017').posts().byCategory()
+  .then(categories => store.dispatch(receiveCategories(categories)))
   .catch(e => console.error(e));
 
 const render = (Component) => {

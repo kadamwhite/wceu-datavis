@@ -29,8 +29,7 @@ function tag_adjacency_register_scripts($hook) {
   $build_json = @file_get_contents( $plugin_dir . '/dist/webpack-manifest.json' );
 
   if ( ( ! defined( 'WP_DEBUG' ) || WP_DEBUG === false ) && $build_json !== false ) {
-    // Not in debug mode, and manifest file exists: parse it and load those
-    // scripts & stylesheets
+    // Not in debug mode, and manifest file exists: parse it and load those assets
     $build_manifest = json_decode( $build_json );
     wp_register_script(
       'tag-adjacency-matrix',
@@ -49,6 +48,7 @@ function tag_adjacency_register_scripts($hook) {
     // WP_SCRIPT_DEBUG mode means "use webpack-dev-server"
     wp_register_script(
       'tag-adjacency-matrix',
+      // Note: if multiple webpack dev servers are running, this port may be incorrect!
       'http://localhost:8080/bundle.js',
       array(),
       $code_version,
@@ -114,3 +114,60 @@ add_action( 'admin_menu', 'tag_adjacency_register_admin_screen' );
 function tag_adjacency_render_admin_screen() {
   echo '<div id="tag_adjacency_application_root"></div>';
 }
+
+/**
+ * Register the routes for our graph endpoint
+ */
+function tag_adjacency_register_routes() {
+
+  // register_rest_route() handles more arguments but we are going to stick to the basics for now.
+  register_rest_route( 'wceu/2017', '/posts/by_tag', array(
+    // By using this constant we ensure that when the WP_REST_Server changes,
+    // our readable endpoints will work as intended.
+    'methods' => WP_REST_Server::READABLE,
+    // Register the callback fired when WP_REST_Server matches this endpoint
+    'callback' => function() {
+      $tags = get_tags();
+      return rest_ensure_response( array_values( array_map( function( $tag ) {
+        $post_ids_for_tag = new WP_Query( array(
+          'posts_per_page' => -1,
+          'fields' => 'ids',
+          'tag_id' => $tag->term_id,
+        ) );
+        return array(
+          'id' => $tag->term_id,
+          'name' => $tag->name,
+          'count' => $tag->count,
+          'taxonomy' => 'post_tag',
+          'description' => $tag->description,
+          'posts' => $post_ids_for_tag->posts,
+        );
+      }, $tags ) ) );
+    },
+  ) );
+
+  register_rest_route( 'wceu/2017', '/posts/by_category', array(
+    'methods' => WP_REST_Server::READABLE,
+    'callback' => function() {
+      $categories = get_categories();
+      return rest_ensure_response( array_values( array_map( function( $cat ) {
+        $post_ids_for_cat = new WP_Query( array(
+          'posts_per_page' => -1,
+          'fields' => 'ids',
+          'cat' => $cat->term_id,
+        ) );
+        return array(
+          'id' => $cat->term_id,
+          'name' => $cat->name,
+          'count' => $cat->count,
+          'parent' => $cat->parent,
+          'taxonomy' => 'category',
+          'description' => $cat->description,
+          'posts' => $post_ids_for_cat->posts,
+        );
+      }, $categories ) ) );
+    },
+  ) );
+}
+
+add_action( 'rest_api_init', 'tag_adjacency_register_routes' );

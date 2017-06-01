@@ -1,12 +1,15 @@
 /* eslint-disable no-underscore-dangle */// Part of external API
 import WPAPI from 'wpapi';
-import { PropTypes } from 'react';
+import PropTypes from 'prop-types';
+
+import routes from './api-routes.json';
 
 let { WPAPI_SETTINGS } = global;
 
 if (! WPAPI_SETTINGS) {
   WPAPI_SETTINGS = { endpoint: '/' };
 }
+WPAPI_SETTINGS.routes = routes;
 
 const api = new WPAPI(WPAPI_SETTINGS);
 
@@ -159,3 +162,5 @@ export const normalizedResourceShape = PropTypes.shape({
   type: PropTypes.string.isRequired,
   count: PropTypes.number.isRequired,
 });
+
+export default api;
