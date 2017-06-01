@@ -50,7 +50,7 @@ export default function(state = {}, action) {
     return action.payload.reduce((newState, post) => {
       const ids = [
         postId(post.id),
-        ...post.categories.concat(post.tags).map(termId),
+        ...(post.categories || []).concat(post.tags || []).map(termId),
       ];
 
       while (ids.length) {

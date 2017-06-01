@@ -13,8 +13,7 @@
   */
 add_action( 'admin_init', function() {
 
-  $plugin_dir = trailingslashit( plugin_dir_url( __FILE__ ) );
-  $dist_path = $plugin_dir . 'dist/';
+  $plugin_dir = trailingslashit( dirname( __FILE__ ) );
   $package_json = file_get_contents( $plugin_dir . 'package.json' );
   $code_version = json_decode( $package_json )->version;
 
@@ -22,9 +21,10 @@ add_action( 'admin_init', function() {
   // running, a file manifest for webpack's generated files (which have hashed
   // filenames in some cases) will be available at ./dist/webpack-manifest.json:
   // try to load & parse that file (the @ suppresses load warnings).
-  $asset_manifest_file = @file_get_contents( $dist_path . 'webpack-manifest.json' );
+  $asset_manifest_file = @file_get_contents( $plugin_dir . 'dist/webpack-manifest.json' );
+  $build_manifest = json_decode( $asset_manifest_file );
 
-  if ( ! $asset_manifest_file ) {
+  if ( ! $build_manifest ) {
     // If the file is not available, display a warning
     add_action( 'admin_notices', function() {
       ?>
@@ -40,7 +40,17 @@ add_action( 'admin_init', function() {
 
   // Now that we have the manifest, iterate through the different bundles.
   // Each bundle represents one "entry" in the Webpack configuration.
-  $build_manifest = json_decode( $asset_manifest_file );
+  $plugin_url = trailingslashit( plugin_dir_url( __FILE__ ) );
+  $dist_path = $plugin_dir . 'dist/';
+  // Hard-coding the dev paths
+  // $build_manifest = (object)array(
+  //   'tag_adjacency' => (object)array(
+  //     'source' => 'tag_adjacency.js',
+  //   ),
+  //   'posting_frequency' => (object)array(
+  //     'source' => 'posting_frequency.js',
+  //   ),
+  // );
   foreach ( $build_manifest as $bundle_name => $bundle_assets ) {
     // Add an action callback for each bundle
     add_action( 'admin_enqueue_scripts', function( $hook ) use (
@@ -67,10 +77,10 @@ add_action( 'admin_init', function() {
       }
 
       // If the entry contains a script, register it
-      if ( isset( $bundle_assets->source ) ) {
+      if ( isset( $bundle_assets->js ) ) {
         wp_register_script(
           $bundle_name,
-          $dist_path . $bundle_assets->source,
+          $bundle_assets->js,
           array(),
           $code_version,
           true // enqueue in footer
@@ -99,7 +109,7 @@ add_action( 'admin_init', function() {
       }
 
       // If the entry contains a stylesheet, enqueue it
-      if ( $bundle_assets->css ) {
+      if ( isset( $bundle_assets->css ) ) {
         wp_enqueue_style(
           $bundle_name,
           $dist_path . $bundle_assets->css,
@@ -198,6 +208,53 @@ function wceu_datavis_register_routes() {
       }, $categories ) ) );
     },
   ) );
+
+  function wceu_datavis_format_post_object( $post ) {
+    return array(
+      'id' => $post->ID,
+      'title' => $post->post_title,
+      'date' => $post->post_date,
+      'guid' => $post->guid,
+    );
+  }
+
+  register_rest_route( 'wceu/2017', '/posts', array(
+    'methods' => WP_REST_Server::READABLE,
+    'callback' => function() {
+      $posts = new WP_Query( array(
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+      ) );
+      return rest_ensure_response( array_map( 'wceu_datavis_format_post_object', $posts->posts ) );
+    }
+  ));
+
+  register_rest_route( 'wceu/2017', '/posts/(?P<id>\d+)', array(
+    'methods' => WP_REST_Server::READABLE,
+    'callback' => function( $params ) {
+      $post = get_post( $params['id'] );
+      return rest_ensure_response( wceu_datavis_format_post_object( $post ) );
+    },
+    'args' => array(
+      'id' => array(
+        'validate_callback' => 'is_numeric',
+      ),
+    ),
+  ));
+
+  register_rest_route( 'wceu/2017', '/posts/past_year', array(
+    'methods' => WP_REST_Server::READABLE,
+    'callback' => function() {
+      $posts = new WP_Query( array(
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'date_query' => array(
+          'after' => '-1 Year',
+        ),
+      ) );
+      return rest_ensure_response( array_map( 'wceu_datavis_format_post_object', $posts->posts ) );
+    }
+  ));
 }
 
 add_action( 'rest_api_init', 'wceu_datavis_register_routes' );

@@ -12,21 +12,16 @@ import { Provider } from 'react-redux';
 
 import makeStore from './redux/store';
 
-import AdjacencyGraphContainer from './components/AdjacencyGraphContainer';
+import PostingFrequencyContainer from './components/PostingFrequencyContainer';
 
 import api from './services/api';
-import { receiveCategories, receiveTags } from './redux/actions';
+import { receivePosts } from './redux/actions';
 
 const store = makeStore();
 
 // Kick off API requests
-// getAllPosts(batch => store.dispatch(receivePosts(batch)))
-//   .catch(e => console.error(e));
-api.namespace('wceu/2017').posts().byTag()
-  .then(tags => store.dispatch(receiveTags(tags)))
-  .catch(e => console.error(e));
-api.namespace('wceu/2017').posts().byCategory()
-  .then(categories => store.dispatch(receiveCategories(categories)))
+api.namespace('wceu/2017').posts()
+  .then(posts => store.dispatch(receivePosts(posts)))
   .catch(e => console.error(e));
 
 const render = (Component) => {
@@ -40,11 +35,11 @@ const render = (Component) => {
   );
 };
 
-render(AdjacencyGraphContainer);
+render(PostingFrequencyContainer);
 
 // Hot Module Replacement API
 if (module.hot) {
-  module.hot.accept('./components/AdjacencyGraphContainer', () => {
-    render(AdjacencyGraphContainer);
+  module.hot.accept('./components/PostingFrequencyContainer', () => {
+    render(PostingFrequencyContainer);
   });
 }

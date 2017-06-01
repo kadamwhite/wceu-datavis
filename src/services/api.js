@@ -140,15 +140,17 @@ export const resourceId = ({ id, taxonomy }) => (taxonomy ? termId(id) : postId(
  * @returns {Object} An object with consistent structure
  */
 export function normalizeResource(resource) {
-  const type = resource.type ? resource.type : resource.taxonomy;
+  // Assume 'post' is the default type
+  const type = resource.type ? resource.type : resource.taxonomy || 'post';
   const title = (resource.title && resource.title.rendered) ?
     resource.title.rendered :
-    resource.name;
+    resource.title || resource.name;
   // Taxonomy terms will have a count of associated posts
   const count = resource.count ? resource.count : 0;
   return {
+    // All IDs converted to strings
     id: resourceId(resource),
-    link: resource.link,
+    link: resource.link || resource.guid,
     title,
     type,
     count,

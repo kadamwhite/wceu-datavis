@@ -14,6 +14,7 @@ module.exports = {
 
   entry: {
     tag_adjacency: './tag-adjacency.jsx',
+    posting_frequency: './post-frequency.jsx',
   },
 
   output: {

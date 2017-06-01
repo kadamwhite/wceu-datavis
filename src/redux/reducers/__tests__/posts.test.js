@@ -45,6 +45,37 @@ describe('posts reducer', () => {
       });
     });
 
+    it('adds custom API endpoint posts to dictionary', () => {
+      const payload = [{
+        id: 5321,
+        title: 'Screencast Transcript: Improving Webpack Build Times',
+        date: '2017-05-03 10:30:22',
+        guid: 'https://bocoup.com/?p=5321',
+      }];
+      const nextState = posts({
+        byId: {
+          1: { id: 1, title: 'Post 1' },
+          2: { id: 2, title: 'Post 2' },
+        },
+      }, {
+        type: RECEIVE_POSTS,
+        payload,
+      });
+      expect(nextState).not.toBe(initialState);
+      expect(nextState.byId).toBeDefined();
+      expect(nextState.byId).not.toBe(initialState.byId);
+      expect(nextState.byId).toEqual({
+        1: { id: 1, title: 'Post 1' },
+        2: { id: 2, title: 'Post 2' },
+        5321: {
+          id: 5321,
+          title: 'Screencast Transcript: Improving Webpack Build Times',
+          date: '2017-05-03 10:30:22',
+          guid: 'https://bocoup.com/?p=5321',
+        },
+      });
+    });
+
     it('adds new posts to dictionary', () => {
       const payload = [
         { id: 3, title: 'Post 3' },
