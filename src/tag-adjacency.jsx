@@ -12,8 +12,6 @@ import { Provider } from 'react-redux';
 
 import makeStore from './redux/store';
 
-import './global.styl';
-
 import App from './components/App';
 
 import api from './services/api';
@@ -38,7 +36,7 @@ const render = (Component) => {
         <Component />
       </Provider>
     </AppContainer>,
-    document.getElementById('tag_adjacency_application_root')
+    document.getElementById('wceu_datavis_application_root')
   );
 };
 

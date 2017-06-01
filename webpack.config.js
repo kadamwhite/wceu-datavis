@@ -4,34 +4,39 @@ const findCacheDir = require('find-cache-dir');
 const objectHash = require('node-object-hash');
 
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
+const WebpackFileList = require('webpack-file-list-plugin');
 
 const hardSourceCacheDir = findCacheDir({
   // Render into node_modules/.cache/hard-source/[confighash]/...
   name: 'hard-source/[confighash]',
 });
 
+const outputPath = resolve(__dirname, 'dist');
+
+const hotReloadingDeps = [
+  // Allow WP to control the publicPath
+  './dev-path-transformation',
+
+  // activate HMR for React
+  'react-hot-loader/patch',
+
+  // bundle the client for hot reloading
+  // only- means to only hot reload for successful updates
+  'webpack/hot/only-dev-server',
+];
+
 module.exports = {
   devtool: 'cheap-module-source-map',
 
   context: resolve(__dirname, 'src'),
 
-  entry: [
-    // Allow WP to control the publicPath
-    './dev-path-transformation',
-
-    // activate HMR for React
-    'react-hot-loader/patch',
-
-    // bundle the client for hot reloading
-    // only- means to only hot reload for successful updates
-    'webpack/hot/only-dev-server',
-
-    './index.jsx',
-  ],
+  entry: {
+    'tag_adjacency': hotReloadingDeps.concat('./tag-adjacency.jsx'),
+  },
 
   output: {
-    // the output bundle
-    filename: 'bundle.js',
+    // the output bundles
+    filename: '[name].js',
 
     path: resolve(__dirname, 'dist'),
 
@@ -134,7 +139,7 @@ module.exports = {
 
   externals: {
     // Whitelist the global values that WordPress will inject via wp_localize_script
-    WP_TAG_ADJACENCY_PLUGIN_PATH: true,
+    WCEU_DATAVIS_PLUGIN_PATH: true,
     WPAPI_SETTINGS: true,
   },
 
@@ -158,6 +163,13 @@ module.exports = {
       // use if [confighash] is in cacheDirectory, or if the cache should be
       // replaced if [confighash] does not appear in cacheDirectory.
       configHash: webpackConfig => objectHash().hash(webpackConfig),
+    }),
+
+    // Generate a manifest of webpack-authored filenames that the plugin can use
+    // to enqueue dev bundles
+    new WebpackFileList({
+      filename: 'webpack-manifest.json',
+      path: outputPath,
     }),
   ],
 

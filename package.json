@@ -13,13 +13,13 @@
     "last 2 versions"
   ],
   "scripts": {
-    "build": "webpack",
-    "build-storybook": "build-storybook",
-    "build:prod": "npm run clean && webpack --config webpack.config.prod.js",
     "clean": "rimraf dist/ && mkdirp dist",
     "clear-cache": "rimraf node_modules/.cache",
+    "build": "npm run clean && webpack",
+    "build:prod": "npm run clean && webpack --config webpack.config.prod.js",
+    "build-storybook": "build-storybook",
     "lint": "eslint --ext js,jsx ./*.js src jest .storybook",
-    "start": "webpack-dev-server",
+    "start": "mkdirp dist && webpack-dev-server",
     "storybook": "start-storybook -p 6006",
     "test": "node jest/run.js"
   },

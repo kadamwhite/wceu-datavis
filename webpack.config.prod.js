@@ -12,9 +12,9 @@ module.exports = {
 
   context: resolve(__dirname, 'src'),
 
-  entry: [
-    './index.jsx',
-  ],
+  entry: {
+    'tag_adjacency': './tag-adjacency.jsx',
+  },
 
   output: {
     // the output bundle
@@ -55,8 +55,19 @@ module.exports = {
                 localIdentName: '[path][name]--[local]--[hash:base64:5]',
               },
             },
-            'postcss-loader', // See postcss.config.js for options
-            'stylus-loader',
+            {
+              // See postcss.config.js for further configuration
+              loader: 'postcss-loader',
+              options: {
+                sourceMap: true,
+              },
+            },
+            {
+              loader: 'stylus-loader',
+              options: {
+                sourceMap: true,
+              },
+            },
           ],
         }),
       },

@@ -4,7 +4,7 @@ import AdjacencyGraphContainer from './AdjacencyGraphContainer';
 
 const App = () => (
   <div>
-    <h2>Taxonomy Term Coincidence</h2>
+    <h2>Tag & Category Term Co-occurrence Matrix</h2>
     <AdjacencyGraphContainer
       width={700}
       height={700}

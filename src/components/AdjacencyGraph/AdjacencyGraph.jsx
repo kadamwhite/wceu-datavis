@@ -10,7 +10,6 @@ import styles from './AdjacencyGraph.styl';
 
 class AdjacencyGraph extends Component {
   constructor(props) {
-    console.log('constructor');
     super(props);
 
     this.x = scaleBand();
@@ -22,7 +21,6 @@ class AdjacencyGraph extends Component {
   }
 
   updateScales() {
-    console.log('updateScales');
     const { matrix, nodes, types, width } = this.props;
 
     const nodeIds = Object.keys(nodes)
@@ -60,7 +58,6 @@ class AdjacencyGraph extends Component {
   }
 
   render() {
-    console.log('render');
     const margin = { top: 150, right: 0, bottom: 10, left: 200 };
     const { width, height, matrix } = this.props;
 
@@ -69,15 +66,12 @@ class AdjacencyGraph extends Component {
     const { x, color, nodes } = this;
 
     return (
-      <div>
+      <div className={styles.container}>
         <svg
           width={`${width + margin.left + margin.right}px`}
           height={`${height + margin.top + margin.bottom}px`}
         >
-          <g
-            ref={(node) => { this.g = node; }}
-            transform={`translate(${margin.left},${margin.top})`}
-          >
+          <g transform={`translate(${margin.left},${margin.top})`}>
             <rect
               className={styles.background}
               width={width}

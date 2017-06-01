@@ -1,124 +1,154 @@
 <?php
 /**
- * Plugin Name: Tag Adjacency Matrix
- * Description: Visualization of co-occurring taxonomy terms
+ * Plugin Name: WCEU Datavis Examples
+ * Description: Sample data visualization projects built with the REST API, React & D3.js
+ * Author: K Adam White
  */
 
 /**
- * Render the scripts and styles for this plugin, optionally loading the bundle
- * from webpack-dev-server if WP_DEBUG and WP_SCRIPT_DEBUG are both true.
- *
- * If WP_DEBUG is false, webpack-manifest.json (generated on prod build) is
- * digested to get the list of hashed JS and CSS filenames to enqueue.
- */
-function tag_adjacency_register_scripts($hook) {
-  // Our JS is only needed on our custom admin page
-  if (strpos($hook, 'tag_adjacency_admin_screen') === false) {
+  * Render the scripts and styles for this plugin, reading in the list of
+  * hashed asset filenames to register & enqueue from a `webpack-manifest.json`
+  * file that Webpack generates on build. Each script will be registered for
+  * the page for which the hook matches the bundle entry name.
+  */
+add_action( 'admin_init', function() {
+
+  $plugin_dir = trailingslashit( plugin_dir_url( __FILE__ ) );
+  $dist_path = $plugin_dir . 'dist/';
+  $package_json = file_get_contents( $plugin_dir . 'package.json' );
+  $code_version = json_decode( $package_json )->version;
+
+  // If the plugin code has been built for production or the dev server is
+  // running, a file manifest for webpack's generated files (which have hashed
+  // filenames in some cases) will be available at ./dist/webpack-manifest.json:
+  // try to load & parse that file (the @ suppresses load warnings).
+  $asset_manifest_file = @file_get_contents( $dist_path . 'webpack-manifest.json' );
+
+  if ( ! $asset_manifest_file ) {
+    // If the file is not available, display a warning
+    add_action( 'admin_notices', function() {
+      ?>
+      <div class="notice notice-error">
+        <p><?php _e( 'The WCEU Datavis plugin asset manifest is not available!', 'wceu_datavis' ); ?></p>
+        <p><?php _e( 'Run the plugin build script or start the development server.', 'wceu_datavis' ); ?></p>
+      </div>
+      <?php
+    });
+
     return;
   }
 
-  $plugin_dir = plugin_dir_url( __FILE__ );
-  $dist_path = $plugin_dir . 'dist/';
-  $package_json = file_get_contents( $plugin_dir . '/package.json' );
-  $code_version = json_decode( $package_json )->version;
-
-  // If the plugin code has been built for production, there will be a file
-  // manifest for webpack's generated files (which have hashed filenames)
-  // available at ./dist/webpack-manifest.json: try to load & parse that
-  // file (the @ suppresses load warnings)
-  $build_json = @file_get_contents( $plugin_dir . '/dist/webpack-manifest.json' );
-
-  if ( ( ! defined( 'WP_DEBUG' ) || WP_DEBUG === false ) && $build_json !== false ) {
-    // Not in debug mode, and manifest file exists: parse it and load those assets
-    $build_manifest = json_decode( $build_json );
-    wp_register_script(
-      'tag-adjacency-matrix',
-      $dist_path . $build_manifest->main->source,
-      array(),
-      $code_version,
-      true // enqueue in footer
-    );
-    wp_register_style(
-      'tag-adjacency-matrix',
-      $dist_path . $build_manifest->main->css,
-      array(),
+  // Now that we have the manifest, iterate through the different bundles.
+  // Each bundle represents one "entry" in the Webpack configuration.
+  $build_manifest = json_decode( $asset_manifest_file );
+  foreach ( $build_manifest as $bundle_name => $bundle_assets ) {
+    // Add an action callback for each bundle
+    add_action( 'admin_enqueue_scripts', function( $hook ) use (
+      $bundle_name,
+      $bundle_assets,
+      $dist_path,
       $code_version
-    );
-  } else if ( defined( 'WP_SCRIPT_DEBUG' ) && WP_SCRIPT_DEBUG ) {
-    // WP_SCRIPT_DEBUG mode means "use webpack-dev-server"
-    wp_register_script(
-      'tag-adjacency-matrix',
-      // Note: if multiple webpack dev servers are running, this port may be incorrect!
-      'http://localhost:8080/bundle.js',
-      array(),
-      $code_version,
-      true // enqueue in footer
-    );
-  } else {
-    // In all other cases expect a built dist/bundle.js file to exist;
-    // this requires `npm run build` to be executed at least once in a
-    // development environment
-    wp_register_script(
-      'tag-adjacency-matrix',
-      $dist_path . 'bundle.js',
-      array(),
-      $code_version,
-      true // enqueue in footer
-    );
-    // Manually rewrite the paths within bundle.js so that e.g. the CSS-
-    // loaded images get pointed at the right URL (since relative addresses
-    // will not work with JS-injected style tags)
-    wp_localize_script(
-      'tag-adjacency-matrix',
-      'WP_TAG_ADJACENCY_PLUGIN_PATH',
-      $dist_path
-    );
+    ) {
+      // Each bundle should only be loaded on its corresponding custom admin page
+      if ( false === strpos( $hook, 'wceu_datavis_' . $bundle_name ) ) {
+        return;
+      }
+
+      // If the "devserver" query parameter is present in the URL or the
+      // WP_SCRIPT_DEBUG constant is true, look for the assets on the
+      // webpack development server instead of the local filesystem
+      $default_dev_server_url = 'http://localhost:8080/';
+      if ( isset( $_GET[ 'devserver' ] ) ) {
+        $dist_path = ! empty( $_GET[ 'devserver' ] ) ?
+          trailingslashit( $_GET[ 'devserver' ] ) :
+          $default_dev_server_url;
+      } else if ( defined( 'WP_SCRIPT_DEBUG' ) && WP_SCRIPT_DEBUG ) {
+        $dist_path = $default_dev_server_url;
+      }
+
+      // If the entry contains a script, register it
+      if ( isset( $bundle_assets->source ) ) {
+        wp_register_script(
+          $bundle_name,
+          $dist_path . $bundle_assets->source,
+          array(),
+          $code_version,
+          true // enqueue in footer
+        );
+
+        // Manually rewrite the paths within bundle.js so that e.g. the CSS-
+        // loaded images get pointed at the right URL (since relative addresses
+        // will not work with JS-injected style tags)
+        wp_localize_script(
+          $bundle_name,
+          'WCEU_DATAVIS_PLUGIN_PATH',
+          $dist_path
+        );
+
+        // Localize our script to inject a NONCE that can be used to authenticate
+        wp_localize_script(
+          $bundle_name,
+          'WPAPI_SETTINGS',
+          array(
+            'endpoint' => esc_url_raw( rest_url() ),
+            'nonce' => wp_create_nonce( 'wp_rest' )
+          )
+        );
+
+        wp_enqueue_script( $bundle_name );
+      }
+
+      // If the entry contains a stylesheet, enqueue it
+      if ( $bundle_assets->css ) {
+        wp_enqueue_style(
+          $bundle_name,
+          $dist_path . $bundle_assets->css,
+          array(),
+          $code_version
+        );
+      }
+    });
   }
-
-  // Localize our script to inject a NONCE that can be used to auth
-  wp_localize_script(
-    'tag-adjacency-matrix',
-    'WPAPI_SETTINGS',
-    array(
-      'endpoint' => esc_url_raw( rest_url() ),
-      'nonce' => wp_create_nonce( 'wp_rest' )
-    )
-  );
-
-  // Enqueue our script
-  wp_enqueue_script( 'tag-adjacency-matrix' );
-  // Enqueue our style (if present)
-  wp_enqueue_style( 'tag-adjacency-matrix' );
-}
-add_action( 'admin_enqueue_scripts', 'tag_adjacency_register_scripts' );
+});
 
 /** Register the admin screen where we will display our application */
-function tag_adjacency_register_admin_screen() {
-  $plugin_dir = plugin_dir_url( __FILE__ );
-  $package_json = file_get_contents( $plugin_dir . '/package.json' );
-  $package_info = json_decode( $package_json );
-
-  add_menu_page(
-    __( 'Tag Adjacency', 'tag_adjacency' ), // Page Title
-    __( 'Tag Adjacency', 'tag_adjacency' ), // Menu Title
-    'edit_posts',                           // Require this Capability
-    'tag_adjacency_admin_screen',           // Menu slug
-    'tag_adjacency_render_admin_screen',    // The function to run
-    'dashicons-forms',                      // icon_url
-    9                                       // position
+function wceu_datavis_register_admin_screen() {
+  function wceu_datavis_render_admin_screen( $title ) {
+    return function() use ( $title ) {
+      echo '<div class="wrap">';
+      echo   '<h1>' . $title . '</h1>';
+      echo   '<div id="wceu_datavis_application_root"></div>';
+      echo '</div>';
+    };
+  }
+  function wceu_add_menu_page( $page_title, $menu_slug, $menu_icon ) {
+    add_menu_page(
+      $page_title,                                // Page Title
+      $page_title,                                // Menu Title
+      'edit_posts',                               // Require this Capability
+      $menu_slug,                                 // Menu slug
+      wceu_datavis_render_admin_screen( $page_title ), // The function to run to render the page
+      $menu_icon,                                 // icon_url
+      9                                           // admin menu position
+    );
+  }
+  wceu_add_menu_page(
+    __( 'Tag Adjacency', 'wceu_datavis' ),
+    'wceu_datavis_tag_adjacency',
+    'dashicons-forms'
+  );
+  wceu_add_menu_page(
+    __( 'Posting Frequency', 'wceu_datavis' ),
+    'wceu_datavis_posting_frequency',
+    'dashicons-chart-area'
   );
 }
-add_action( 'admin_menu', 'tag_adjacency_register_admin_screen' );
-
-/** Render the HTML container for the react application */
-function tag_adjacency_render_admin_screen() {
-  echo '<div id="tag_adjacency_application_root"></div>';
-}
+add_action( 'admin_menu', 'wceu_datavis_register_admin_screen' );
 
 /**
  * Register the routes for our graph endpoint
  */
-function tag_adjacency_register_routes() {
+function wceu_datavis_register_routes() {
 
   // register_rest_route() handles more arguments but we are going to stick to the basics for now.
   register_rest_route( 'wceu/2017', '/posts/by_tag', array(
@@ -170,4 +200,4 @@ function tag_adjacency_register_routes() {
   ) );
 }
 
-add_action( 'rest_api_init', 'tag_adjacency_register_routes' );
+add_action( 'rest_api_init', 'wceu_datavis_register_routes' );
