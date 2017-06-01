@@ -1,6 +1,6 @@
 import { RECEIVE_POSTS, RECEIVE_CATEGORIES, RECEIVE_TAGS } from '../actions';
 import { postId, termId } from '../../services/api';
-import ascending from '../../utils/ascending-sort';
+import { ascending } from '../../utils/sort';
 
 /** Increment a numeric value if one is provided, or else return 1 */
 function incrementOrSet(val) {

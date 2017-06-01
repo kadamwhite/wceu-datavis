@@ -7,7 +7,7 @@ import nodes from './reducers/nodes';
 import links from './reducers/links';
 import matrix from './reducers/matrix';
 
-import ascending from '../utils/ascending-sort';
+import { ascending } from '../utils/sort';
 
 /*
  * Combine reducers to produce single reducer for state. Each reducer handles
