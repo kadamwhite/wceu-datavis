@@ -7,10 +7,6 @@ root = true
 [*]
 end_of_line = lf
 insert_final_newline = true
-
-# Matches multiple file types with brace expansion notation:
-# and sets 2-space indentation
-[*.{js,styl,json,yml,sql}]
 trim_trailing_whitespace = true
 charset = utf-8
 indent_style = space

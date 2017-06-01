@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 /* eslint-disable no-underscore-dangle */
+/* eslint-disable no-unused-vars */
 /* global __webpack_public_path__:true */
 
 // Allow WordPress to inject the full URI to the plugin path from which the

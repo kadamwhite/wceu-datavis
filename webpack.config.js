@@ -11,7 +11,7 @@ const hardSourceCacheDir = findCacheDir({
 });
 
 module.exports = {
-  devtool: 'inline-source-map',
+  devtool: 'cheap-module-source-map',
 
   context: resolve(__dirname, 'src'),
 
@@ -95,10 +95,22 @@ module.exports = {
             options: {
               modules: true,
               localIdentName: '[path][name]--[hash:base64:5]',
+              sourceMap: true,
             },
           },
-          'postcss-loader', // See postcss.config.js for options
-          'stylus-loader',
+          {
+            // See postcss.config.js for further configuration
+            loader: 'postcss-loader',
+            options: {
+              sourceMap: true,
+            },
+          },
+          {
+            loader: 'stylus-loader',
+            options: {
+              sourceMap: true,
+            },
+          },
         ],
       },
       {
