@@ -53,6 +53,11 @@ module.exports = {
     // match the output path
     contentBase: resolve(__dirname, 'dist'),
 
+    // Permit hot-reloading from the external WordPress server
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
+
     // when running from the dev server, all files are served from server root
     publicPath: '/',
   },
