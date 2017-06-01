@@ -140,7 +140,7 @@ class AdjacencyGraph extends Component {
             ))}
             {/* Row groups */}
             {nodes.map(node => (
-              <g key={`row${node.id}`} transform={`translate(0,${x(node.id)})`}>
+              <g className={styles.group} key={`row${node.id}`} transform={`translate(0,${x(node.id)})`}>
                 {/* Row label */}
                 <text
                   className={styles.label}

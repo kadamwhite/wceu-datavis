@@ -13,7 +13,7 @@ module.exports = {
   context: resolve(__dirname, 'src'),
 
   entry: {
-    'tag_adjacency': './tag-adjacency.jsx',
+    tag_adjacency: './tag-adjacency.jsx',
   },
 
   output: {

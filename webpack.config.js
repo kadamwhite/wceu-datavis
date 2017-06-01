@@ -31,7 +31,7 @@ module.exports = {
   context: resolve(__dirname, 'src'),
 
   entry: {
-    'tag_adjacency': hotReloadingDeps.concat('./tag-adjacency.jsx'),
+    tag_adjacency: hotReloadingDeps.concat('./tag-adjacency.jsx'),
   },
 
   output: {
