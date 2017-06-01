@@ -27,14 +27,11 @@ class AdjacencyGraph extends Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    console.log('shouldComponentUpdate');
     if (valueChanged(this.props, nextProps, ['matrix', 'nodes', 'types', 'width'])) {
-      console.log('props changed');
       this.updateScales(nextProps);
       return true;
     }
     if (this.state.sort !== nextState.sort) {
-      console.log('state changed');
       // Set the domain for the x/y position scale & ensure its range is up-to-date
       this.x.domain(this.sortNodeIdsBy(nextState.sort));
       return true;
@@ -43,14 +40,12 @@ class AdjacencyGraph extends Component {
   }
 
   onChangeSort(event) {
-    console.log('onChangeSort');
     this.setState({
       sort: event.target.value,
     });
   }
 
   sortNodeIdsBy(sortType) {
-    console.log('sortNodeIdsBy');
     // Alphabetical is default
     const sortFn = sortType === 'count' ?
       (a, b) => descending(+a.count, +b.count) :
@@ -60,7 +55,6 @@ class AdjacencyGraph extends Component {
   }
 
   updateScales(props) {
-    console.log('updateScales');
     const { matrix, nodes, types, width } = props;
 
     this.nodeIds = Object.keys(nodes)
@@ -97,7 +91,6 @@ class AdjacencyGraph extends Component {
   }
 
   render() {
-    console.log('render');
     const margin = { top: 150, right: 0, bottom: 10, left: 200 };
     const { width, height, matrix } = this.props;
 

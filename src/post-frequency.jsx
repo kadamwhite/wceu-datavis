@@ -19,6 +19,9 @@ import { receiveCategories, receiveTags } from './redux/actions';
 
 const store = makeStore();
 
+// Kick off API requests
+// getAllPosts(batch => store.dispatch(receivePosts(batch)))
+//   .catch(e => console.error(e));
 api.namespace('wceu/2017').posts().byTag()
   .then(tags => store.dispatch(receiveTags(tags)))
   .catch(e => console.error(e));

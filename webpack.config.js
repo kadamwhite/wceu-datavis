@@ -32,6 +32,7 @@ module.exports = {
 
   entry: {
     tag_adjacency: hotReloadingDeps.concat('./tag-adjacency.jsx'),
+    post_frequency: hotReloadingDeps.concat('./post-frequency.jsx'),
   },
 
   output: {
