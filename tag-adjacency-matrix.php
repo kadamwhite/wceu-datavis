@@ -255,6 +255,127 @@ function wceu_datavis_register_routes() {
       return rest_ensure_response( array_map( 'wceu_datavis_format_post_object', $posts->posts ) );
     }
   ));
+
+  /**
+    * Stopwords list taken from http://www.ranks.nl/stopwords, h/t https://www.burakkanber.com/blog/machine-learning-full-text-search-in-javascript-relevance-scoring/
+    */
+  function wceu_datavis_remove_stop_words( $arr ) {
+    $stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can't", "cannot", "could", "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down", "during", "each", "few", "for", "from", "further", "had", "hadn't", "has", "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it", "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "shan't", "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"];
+    return array_filter( $arr, function( $word ) use ( $stopwords ) {
+      return ! in_array( $word, $stopwords );
+    } );
+  }
+
+  register_rest_route( 'wceu/2017', '/posts/tf-idf', array(
+    'methods' => WP_REST_Server::READABLE,
+    'callback' => function() {
+
+      $term_tfidf_by_post = get_transient( 'wceu_datavis_term_tfidf_by_post' );
+
+      if ( $term_tfidf_by_post ) {
+        return rest_ensure_response( $term_tfidf_by_post );
+      }
+
+      // If we made it this far, the tf-idf list is not in the cache! Compute afresh.
+
+      $posts = new WP_Query( array(
+        // Super expensive API endpoint, this is
+        'posts_per_page' => 200,
+        'post_status' => 'publish',
+        'fields' => 'ids',
+      ) );
+
+      $terms_by_post = array_map( function( $post_id ) {
+        $content = apply_filters( 'the_content', get_post_field( 'post_content', $post_id ) );
+        $content = strtolower( strip_tags( $content ) );
+
+        // De-fancify the fancy apostrophes
+        $content = preg_replace( '/’/', "'", html_entity_decode( $content ) );
+
+        // Remove special characters and normalize whitespace
+        $content = preg_replace( '/\s+/', ' ', preg_replace( "/[^A-Za-z0-9_']/", ' ', $content ) );
+        $terms = wceu_datavis_remove_stop_words( explode( ' ', trim( $content ) ) );
+
+        // TODO: use the Porter Stemmer algorithm to simplify words to their stems
+        // (see https://tartarus.org/martin/PorterStemmer/php.txt)
+
+        // Build an associative array of word counts
+        $word_frequencies = array_reduce( $terms, function( $carry, $word ) {
+          $carry[ $word ] = isset( $carry[ $word ] ) ? $carry[ $word ] + 1 : 1;
+          return $carry;
+        }, array() );
+        return array(
+          'id' => $post_id,
+          'title' => get_post_field( 'post_title', $post_id ),
+          'termcount' => count( $terms ),
+          'terms' => $word_frequencies,
+        );
+      }, $posts->posts );
+
+      // We now have an array of all posts, and the frequency of terms within those posts.
+      // Next, we very-inefficiently combine all those arrays.
+
+      // TF(t) = (Number of times term t appears in a document) / (Total number of terms in the document)
+      // IDF(t) = log_e(Total number of documents / Number of documents with term t in it).
+      // Value = TF * IDF
+      $document_count_for_term = function( $term ) use ( $terms_by_post ) {
+        return count( array_filter( $terms_by_post, function( $post ) use ( $term ) {
+          return isset( $post['terms'][ $term ] );
+        } ) );
+      };
+      $all_terms_document_count = array();
+
+      $get_term_document_count = function( $term ) use ( $document_count_for_term, $all_terms_document_count ) {
+        if ( ! isset( $all_terms_document_count[ $term ] ) ) {
+          $all_terms_document_count[ $term ] = $document_count_for_term( $term );
+        }
+        return $all_terms_document_count[ $term ];
+      };
+
+      $document_count = $posts->post_count;
+      $idf = function( $term ) use ( $get_term_document_count, $document_count ) {
+        return log( $document_count / $get_term_document_count( $term ) );
+      };
+
+      foreach ( $terms_by_post as $post ) {
+        $post['tfidf'] = array();
+        foreach ( $post['terms'] as $term => $count ) {
+          if ( $count > 2 ) {
+            $tf = $count / $post['termcount'];
+            $post['tfidf']['term'] = $tf * $idf( $term );
+          }
+        }
+      }
+
+      $term_tfidf_by_post = array_map( function( $post ) use ( $idf ) {
+        $term_tfidf = array();
+
+        foreach ( $post['terms'] as $term => $count ) {
+          $tf = $count / $post['termcount'];
+          $term_tfidf[] = array( 'term' => $term, 'tf-idf' => $tf * $idf( $term ) );
+        }
+
+        // Sort term tf-idf list in descending order
+        usort( $term_tfidf, function( $a, $b ) {
+          if ( $a['tf-idf'] == $b['tf-idf'] ) {
+            return 0;
+          }
+          return ($a['tf-idf'] < $b['tf-idf']) ? 1 : -1;
+        });
+
+        // Return the first 20 most-relevant terms for this document
+        return array(
+          'id' => $post['id'],
+          'title' => $post['title'],
+          'terms' => array_slice( $term_tfidf, 0, 20)
+        );
+      }, $terms_by_post );
+
+      set_transient( 'wceu_datavis_term_tfidf_by_post', $term_tfidf_by_post, 12 * HOUR_IN_SECONDS );
+
+      return rest_ensure_response( $term_tfidf_by_post );
+    }
+  ));
 }
 
 add_action( 'rest_api_init', 'wceu_datavis_register_routes' );
