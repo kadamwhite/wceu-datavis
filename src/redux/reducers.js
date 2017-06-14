@@ -6,6 +6,7 @@ import categories from './reducers/categories';
 import nodes from './reducers/nodes';
 import links from './reducers/links';
 import matrix from './reducers/matrix';
+import tfidf from './reducers/tfidf';
 
 import { ascending } from '../utils/sort';
 
@@ -22,6 +23,7 @@ export default combineReducers({
   nodes,
   links,
   matrix,
+  tfidf,
 });
 
 /** Export selectors */

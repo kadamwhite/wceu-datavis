@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const findCacheDir = require('find-cache-dir');
 
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const WebpackFileList = require('webpack-file-list-plugin');
+const AssetsPlugin = require('assets-webpack-plugin');
 
 const outputPath = resolve(__dirname, 'dist');
 
@@ -15,6 +15,7 @@ module.exports = {
   entry: {
     tag_adjacency: './tag-adjacency.jsx',
     posting_frequency: './post-frequency.jsx',
+    term_frequency: './term-frequency.jsx',
   },
 
   output: {
@@ -104,9 +105,7 @@ module.exports = {
       },
     }),
 
-    // Generate a manifest of webpack-authored filenames that the plugin can use
-    // to enqueue production-ready bundles
-    new WebpackFileList({
+    new AssetsPlugin({
       filename: 'webpack-manifest.json',
       path: outputPath,
     }),

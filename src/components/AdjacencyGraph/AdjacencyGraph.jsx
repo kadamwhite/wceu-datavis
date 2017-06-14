@@ -1,7 +1,7 @@
 /* eslint-disable  react/no-unused-prop-types */// Cannot detect shouldComponentUpdate usage
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { scaleBand, scaleSequential, max } from 'd3';
+import { scaleBand, scaleLinear, scaleSequential, max } from 'd3';
 import { interpolateYlGn } from 'd3-scale-chromatic';
 
 import { ascending, descending } from '../../utils/sort';
@@ -15,7 +15,8 @@ class AdjacencyGraph extends Component {
     super(props);
 
     this.x = scaleBand();
-    this.color = scaleSequential(interpolateYlGn);
+    // this.color = scaleSequential(interpolateYlGn);
+    this.color = scaleLinear().domain(['#000000', '#000000']);
 
     this.onChangeSort = this.onChangeSort.bind(this);
 

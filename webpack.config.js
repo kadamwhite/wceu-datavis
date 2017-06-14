@@ -4,8 +4,7 @@ const findCacheDir = require('find-cache-dir');
 const objectHash = require('node-object-hash');
 
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
-const WebpackFileList = require('webpack-file-list-plugin');
-const AssetsPlugin = require('assets-webpack-plugin')
+const AssetsPlugin = require('assets-webpack-plugin');
 
 const hardSourceCacheDir = findCacheDir({
   // Render into node_modules/.cache/hard-source/[confighash]/...
@@ -34,6 +33,7 @@ module.exports = {
   entry: {
     tag_adjacency: hotReloadingDeps.concat('./tag-adjacency.jsx'),
     posting_frequency: hotReloadingDeps.concat('./post-frequency.jsx'),
+    term_frequency: hotReloadingDeps.concat('./term-frequency.jsx'),
   },
 
   output: {
@@ -166,13 +166,6 @@ module.exports = {
       // replaced if [confighash] does not appear in cacheDirectory.
       configHash: webpackConfig => objectHash().hash(webpackConfig),
     }),
-
-    // Generate a manifest of webpack-authored filenames that the plugin can use
-    // to enqueue dev bundles
-    // new WebpackFileList({
-    //   filename: 'webpack-manifest.json',
-    //   path: outputPath,
-    // }),
 
     new AssetsPlugin({
       filename: 'webpack-manifest.json',

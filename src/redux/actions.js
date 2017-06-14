@@ -46,3 +46,9 @@ export const receiveCategories = categories => ({
   type: RECEIVE_CATEGORIES,
   payload: categories,
 });
+
+export const RECEIVE_TFIDF = 'RECEIVE_TFIDF';
+export const receiveTFIDF = data => ({
+  type: RECEIVE_TFIDF,
+  payload: data,
+});
