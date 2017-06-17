@@ -1,6 +1,6 @@
-# Tag Adjacency
+# WCEU Datavis Examples
 
-A visualization of tag co-occurrence
+Example code for the talk I gave at WCEU 2017, slides available at [talks.kadamwhite.com/wceu2017](http://kadamwhite.github.io/talks/2017/wceu)
 
 ## Installation
 
