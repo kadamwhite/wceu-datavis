@@ -31,17 +31,18 @@ class AdjacencyGraphContainer extends PureComponent {
           nodes={nodes}
           width={700}
           height={700}
-          types={['post_tag', 'category']}
+          types={['post_tag']}
         />
+        {/*
         <ForceDirectedGraph
           matrix={matrix}
           nodes={nodes}
-          width={700}
-          height={700}
-          types={['post_tag']}
+          width={1000}
+          height={650}
           onMouseOver={this.onHoverGraphNode}
         />
         <p ref={(node) => { this.hoveredItem = node; }} />
+        */}
       </div>
     );
   }

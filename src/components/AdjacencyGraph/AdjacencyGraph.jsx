@@ -57,7 +57,7 @@ class AdjacencyGraph extends Component {
       (a, b) => descending(+a.count, +b.count) :
       (a, b) => ascending(a.title.toLowerCase(), b.title.toLowerCase());
 
-    return this.nodes.sort(sortFn).map(node => node.id);
+    return this.nodes.sort(sortFn).map(node => node.id).slice(0, 40);
   }
 
   updateScales(props) {
@@ -123,7 +123,7 @@ class AdjacencyGraph extends Component {
               height={height}
             />
             {/* Column labels */}
-            {nodes.map(node => (
+            {nodes.map(node => (isNaN(x(node.id)) ? null : (
               <text
                 key={`label${node.id}`}
                 className={styles.label}
@@ -136,9 +136,9 @@ class AdjacencyGraph extends Component {
               >
                 {node.title}
               </text>
-            ))}
+            )))}
             {/* Row groups */}
-            {nodes.map(node => (
+            {nodes.map(node => (isNaN(x(node.id)) ? null : (
               <g className={styles.group} key={`row${node.id}`} transform={`translate(0,${x(node.id)})`}>
                 {/* Row label */}
                 <text
@@ -153,6 +153,9 @@ class AdjacencyGraph extends Component {
                 </text>
                 {/* Row cells */}
                 {nodes.map((coincidentNode) => {
+                  if (isNaN(x(coincidentNode.id))) {
+                    return null;
+                  }
                   const value = getCoincidenceCount({ matrix }, node.id, coincidentNode.id);
                   return (
                     <rect
@@ -167,8 +170,18 @@ class AdjacencyGraph extends Component {
                     />
                   );
                 })}
+                {/* Render the node where the node intersects itself */}
+                <rect
+                  className={styles['cell-self']}
+                  key={`${node.id}${node.id}`}
+                  x={x(node.id) + 3}
+                  y={3}
+                  width={x.bandwidth() - 6}
+                  height={x.bandwidth() - 6}
+                  title={`${node.title} always co-occurs with itself`}
+                />
               </g>
-            ))}
+            )))}
           </g>
         </svg>
       </div>

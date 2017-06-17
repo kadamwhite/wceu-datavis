@@ -10,9 +10,6 @@ import {
   forceCenter,
   forceCollide,
   forceLink,
-  // d3-scale
-  scaleOrdinal,
-  schemeCategory10,
 } from 'd3';
 
 import debounce from 'lodash.debounce';
@@ -25,7 +22,7 @@ const classSelectors = Object.keys(styles)
   }, selectors), {});
 
 function radius(d) {
-  return d.type === 'post' ? 5 : 10;
+  return d.type === 'post_tag' ? 5 : 10;
 }
 
 // function isTerm(node) {
@@ -42,8 +39,6 @@ class ForceDirectedGraph extends PureComponent {
       edges: [],
       nodesMap: {},
     };
-
-    this.colorScale = scaleOrdinal(schemeCategory10);
 
     this.state = {
       selectedNode: null,
@@ -68,6 +63,10 @@ class ForceDirectedGraph extends PureComponent {
   isSelectedNode(id) {
     const { selectedNode } = this.state;
     return ! ! (selectedNode && (selectedNode.id === id));
+  }
+
+  tooltip(node) {
+    select(this.svg).select('text').text(node.title.replace(/scholoarships/, 'scholarships'));
   }
 
   runSimulation() {
@@ -97,6 +96,7 @@ class ForceDirectedGraph extends PureComponent {
     links.exit()
       .remove();
     links.enter().append('line')
+      .attr('stroke-width', d => Math.sqrt(d.count))
       .classed(styles.edge, true);
 
     const nodes = nodesGroup
@@ -128,12 +128,12 @@ class ForceDirectedGraph extends PureComponent {
   }
 
   initSimulation() {
-    const { width, height, onMouseOver } = this.props;
+    const { width, height } = this.props;
     this.centeringForce = forceCenter()
       .x(width / 2)
       .y(height / 2);
 
-    this.chargeForce = forceManyBody().strength(-600);
+    this.chargeForce = forceManyBody().strength(-1000);
 
     this.collisionForce = forceCollide()
       .radius(d => 5 + (d.type === 'post' ? 5 : 10));
@@ -187,12 +187,12 @@ class ForceDirectedGraph extends PureComponent {
 
     const selectNearest = debounce(([x, y]) => {
       const node = this.simulation.find(x, y, 50);
-      if (!node) {
+      if (! node) {
         // svg.selectAll(classSelectors.node).classed(styles.hover, false);
         return;
       }
       svg.selectAll(classSelectors.node).classed(styles.hover, d => d === node);
-      onMouseOver(node);
+      this.tooltip(node);
     }, 10);
     svg.on('mousemove', function onMouseMove() {
       selectNearest(mouse(this));
@@ -222,7 +222,6 @@ class ForceDirectedGraph extends PureComponent {
         }, node);
       nodesMap[newNode.id] = newNode;
       nodes.push(newNode);
-      return newNode;
     }
 
     const uniqueTypes = {};
@@ -239,18 +238,21 @@ class ForceDirectedGraph extends PureComponent {
       uniqueTypes[term.type] = true;
     });
 
-    this.colorScale.domain(Object.keys(uniqueTypes));
-
     nodes.forEach((node) => {
       if (! matrix[node.id]) {
         return;
       }
       Object.keys(matrix[node.id]).forEach((coincidentNodeId) => {
         const count = getCoincidenceCount({ matrix }, node.id, coincidentNodeId);
-        // const coincidentNode = nodesMap[coincidentNodeId];
+        const coincidentNode = nodesMap[coincidentNodeId];
+
+        if (coincidentNode.title.match(/^featured-/) || coincidentNode.title.toLowerCase() === 'bocoup') {
+          return;
+        }
         edges.push({
           source: node.id,
           target: coincidentNodeId,
+          count,
         });
       });
     });
@@ -265,8 +267,6 @@ class ForceDirectedGraph extends PureComponent {
 
   render() {
     const { width, height } = this.props;
-    const { matrix } = this.props;
-    const nodes = this.props.nodes;
 
     return (
       <div>
@@ -275,6 +275,7 @@ class ForceDirectedGraph extends PureComponent {
           width={`${width}px`}
           height={`${height}px`}
         >
+          <text className={styles.tooltip} x={width / 2} y={30} />
           <g className="edges" />
           <g className="nodes" />
         </svg>
@@ -286,7 +287,7 @@ class ForceDirectedGraph extends PureComponent {
 ForceDirectedGraph.propTypes = {
   width: PropTypes.number,
   height: PropTypes.number,
-  types: PropTypes.arrayOf(PropTypes.string),
+  // types: PropTypes.arrayOf(PropTypes.string),
   matrix: PropTypes.objectOf(PropTypes.objectOf(PropTypes.number)).isRequired,
   nodes: PropTypes.objectOf(PropTypes.shape({
     id: PropTypes.string.isRequired,
@@ -299,7 +300,7 @@ ForceDirectedGraph.propTypes = {
 ForceDirectedGraph.defaultProps = {
   width: 720,
   height: 720,
-  types: ['category', 'post_tag'],
+  // types: ['category', 'post_tag'],
 };
 
 export default ForceDirectedGraph;
